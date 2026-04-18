@@ -7,7 +7,6 @@ import net.minecraft.client.render.entity.state.BipedEntityRenderState;
 import net.minecraft.client.render.entity.state.PlayerEntityRenderState;
 import net.minecraft.client.util.math.MatrixStack;
 import org.CoreBytes.antimodel.client.AntiModelClientState;
-import org.CoreBytes.antimodel.client.AntiModelItemUtil;
 import org.CoreBytes.antimodel.client.AntiModelKeyUtil;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -38,22 +37,14 @@ public abstract class ArmorFeatureRendererMixin {
             return;
         }
 
-        if (isDisabled(playerState.equippedHeadStack, "equip:head")) {
-            playerState.equippedHeadStack = AntiModelItemUtil.withoutCustomModelData(playerState.equippedHeadStack);
-        }
-        if (isDisabled(playerState.equippedChestStack, "equip:chest")) {
-            playerState.equippedChestStack = AntiModelItemUtil.withoutCustomModelData(playerState.equippedChestStack);
-        }
-        if (isDisabled(playerState.equippedLegsStack, "equip:legs")) {
-            playerState.equippedLegsStack = AntiModelItemUtil.withoutCustomModelData(playerState.equippedLegsStack);
-        }
-        if (isDisabled(playerState.equippedFeetStack, "equip:feet")) {
-            playerState.equippedFeetStack = AntiModelItemUtil.withoutCustomModelData(playerState.equippedFeetStack);
-        }
+        playerState.equippedHeadStack = apply(playerState.equippedHeadStack, "equip:head");
+        playerState.equippedChestStack = apply(playerState.equippedChestStack, "equip:chest");
+        playerState.equippedLegsStack = apply(playerState.equippedLegsStack, "equip:legs");
+        playerState.equippedFeetStack = apply(playerState.equippedFeetStack, "equip:feet");
     }
 
-    private static boolean isDisabled(net.minecraft.item.ItemStack stack, String fallbackKey) {
+    private static net.minecraft.item.ItemStack apply(net.minecraft.item.ItemStack stack, String fallbackKey) {
         String key = AntiModelKeyUtil.keyForStackOrFallback(stack, fallbackKey);
-        return AntiModelClientState.get().isDisabled(key);
+        return AntiModelClientState.get().apply(stack, key, fallbackKey);
     }
 }

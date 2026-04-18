@@ -4,7 +4,6 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.hud.InGameHud;
 import net.minecraft.item.ItemStack;
 import org.CoreBytes.antimodel.client.AntiModelClientState;
-import org.CoreBytes.antimodel.client.AntiModelItemUtil;
 import org.CoreBytes.antimodel.client.AntiModelKeyUtil;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -35,10 +34,9 @@ public abstract class InGameHudMixin {
         }
 
         if (slotIndex != -1) {
-            String key = AntiModelKeyUtil.keyForStackOrFallback(original, "main:" + slotIndex);
-            if (AntiModelClientState.get().isDisabled(key)) {
-                return AntiModelItemUtil.withoutCustomModelData(original);
-            }
+            String fallback = "main:" + slotIndex;
+            String key = AntiModelKeyUtil.keyForStackOrFallback(original, fallback);
+            return AntiModelClientState.get().apply(original, key, fallback);
         }
 
         return original;

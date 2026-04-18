@@ -8,7 +8,6 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Hand;
 import org.CoreBytes.antimodel.client.AntiModelClientState;
-import org.CoreBytes.antimodel.client.AntiModelItemUtil;
 import org.CoreBytes.antimodel.client.AntiModelKeyUtil;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -39,17 +38,11 @@ public abstract class HeldItemRendererMixin {
             return original;
         }
 
-        String key;
-        if (hand == Hand.MAIN_HAND) {
-            key = AntiModelKeyUtil.keyForStackOrFallback(original, "main:" + player.getInventory().getSelectedSlot());
-        } else {
-            key = AntiModelKeyUtil.keyForStackOrFallback(original, "main:" + PlayerInventory.OFF_HAND_SLOT);
-        }
+        String fallback = hand == Hand.MAIN_HAND
+                ? ("main:" + player.getInventory().getSelectedSlot())
+                : ("main:" + PlayerInventory.OFF_HAND_SLOT);
+        String key = AntiModelKeyUtil.keyForStackOrFallback(original, fallback);
 
-        if (AntiModelClientState.get().isDisabled(key)) {
-            return AntiModelItemUtil.withoutCustomModelData(original);
-        }
-
-        return original;
+        return AntiModelClientState.get().apply(original, key, fallback);
     }
 }

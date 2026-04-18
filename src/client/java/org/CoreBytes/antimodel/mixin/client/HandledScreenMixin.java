@@ -7,7 +7,6 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.Slot;
 import org.CoreBytes.antimodel.client.AntiModelClientState;
-import org.CoreBytes.antimodel.client.AntiModelItemUtil;
 import org.CoreBytes.antimodel.client.AntiModelKeyUtil;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -30,17 +29,20 @@ public abstract class HandledScreenMixin {
         }
 
         String key = null;
+        String fallback = null;
 
         if (slot.inventory instanceof PlayerInventory) {
-            key = AntiModelKeyUtil.keyForStackOrFallback(original, "main:" + slot.getIndex());
+            fallback = "main:" + slot.getIndex();
+            key = AntiModelKeyUtil.keyForStackOrFallback(original, fallback);
         } else if (slot instanceof ArmorSlotAccessor accessor) {
             if (accessor.antimodel$getEntity() == client.player) {
-                key = AntiModelKeyUtil.keyForStackOrFallback(original, "equip:" + accessor.antimodel$getEquipmentSlot().getName());
+                fallback = "equip:" + accessor.antimodel$getEquipmentSlot().getName();
+                key = AntiModelKeyUtil.keyForStackOrFallback(original, fallback);
             }
         }
 
-        if (key != null && AntiModelClientState.get().isDisabled(key)) {
-            return AntiModelItemUtil.withoutCustomModelData(original);
+        if (key != null) {
+            return AntiModelClientState.get().apply(original, key, fallback);
         }
 
         return original;

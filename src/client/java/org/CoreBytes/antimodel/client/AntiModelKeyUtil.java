@@ -1,10 +1,13 @@
 package org.CoreBytes.antimodel.client;
 
 import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.CustomModelDataComponent;
 import net.minecraft.component.type.NbtComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.Registries;
+import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -49,27 +52,41 @@ public final class AntiModelKeyUtil {
         return null;
     }
 
-    /**
-     * A stable key derived from the stack's component changes (not slot-based).
-     *
-     * This makes "disable this item" survive moves between slots and persists across restarts,
-     * as long as the server keeps the same components (e.g. custom model data, custom name, lore).
-     *
-     * Note: If two stacks are identical in item+components, they will share the same signature key.
-     */
-    public static String signatureKey(ItemStack stack) {
+    public static String identityKey(ItemStack stack) {
         if (stack.isEmpty()) {
             return null;
         }
 
-        // Avoid disabling "all dirt blocks" etc. Only items with changes should get a signature.
-        if (stack.getComponentChanges().isEmpty()) {
+        String itemId = Registries.ITEM.getId(stack.getItem()).toString();
+
+        Text customName = stack.get(DataComponentTypes.CUSTOM_NAME);
+        CustomModelDataComponent cmd = stack.get(DataComponentTypes.CUSTOM_MODEL_DATA);
+        Identifier itemModel = stack.get(DataComponentTypes.ITEM_MODEL);
+        NbtComponent customData = stack.get(DataComponentTypes.CUSTOM_DATA);
+
+        boolean hasIdentityData = customName != null
+                || cmd != null
+                || itemModel != null
+                || (customData != null && !customData.isEmpty());
+
+        if (!hasIdentityData) {
             return null;
         }
 
-        String itemId = Registries.ITEM.getId(stack.getItem()).toString();
-        String basis = itemId + "|" + stack.getComponentChanges();
-        return "sig:" + sha256Hex(basis);
+        String namePart = customName != null ? customName.getString() : "";
+        String cmdPart = cmd != null ? cmd.toString() : "";
+        String itemModelPart = itemModel != null ? itemModel.toString() : "";
+        String customDataPart = customData != null ? customData.copyNbt().toString() : "";
+
+        String basis = itemId + "|name=" + namePart + "|cmd=" + cmdPart + "|model=" + itemModelPart + "|data=" + customDataPart;
+        return "itm:" + sha256Hex(basis);
+    }
+
+    public static String itemTypeKey(ItemStack stack) {
+        if (stack.isEmpty()) {
+            return "type:empty";
+        }
+        return "type:" + Registries.ITEM.getId(stack.getItem());
     }
 
     public static String keyForStackOrFallback(ItemStack stack, String fallbackKey) {
@@ -78,12 +95,17 @@ public final class AntiModelKeyUtil {
             return uid;
         }
 
-        String sig = signatureKey(stack);
-        if (sig != null) {
-            return sig;
+        String identity = identityKey(stack);
+        if (identity != null) {
+            return identity;
         }
 
-        return fallbackKey;
+        String type = itemTypeKey(stack);
+        if (type != null) {
+            return type;
+        }
+
+        return fallbackKey != null ? fallbackKey : "fallback:empty";
     }
 
     private static String sha256Hex(String input) {

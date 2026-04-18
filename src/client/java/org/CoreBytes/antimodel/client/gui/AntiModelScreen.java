@@ -10,7 +10,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import org.CoreBytes.antimodel.client.AntiModelClientState;
-import org.CoreBytes.antimodel.client.AntiModelItemUtil;
 import org.CoreBytes.antimodel.client.AntiModelKeyUtil;
 
 import java.util.ArrayList;
@@ -127,8 +126,11 @@ public final class AntiModelScreen extends Screen {
             ItemStack stack = hovered.getStack(client.player);
             if (!stack.isEmpty()) {
                 List<Text> tooltip = new ArrayList<>(Screen.getTooltipFromItem(client, stack));
-                boolean disabled = AntiModelClientState.get().isDisabled(hovered.keyForStack(client.player));
-                tooltip.add(Text.literal("AntiModel: " + (disabled ? "disabled" : "enabled")).formatted(Formatting.GRAY));
+                String key = hovered.keyForStack(client.player);
+                String state = AntiModelClientState.get().describe(key);
+                tooltip.add(Text.literal("AntiModel: " + state).formatted(Formatting.GRAY));
+                tooltip.add(Text.literal("LMB: hide/show").formatted(Formatting.DARK_GRAY));
+                tooltip.add(Text.literal("/antimodel cmd <zahl> fuer Hand-Item").formatted(Formatting.DARK_GRAY));
                 context.drawTooltip(textRenderer, tooltip, mouseX, mouseY);
             }
         }
@@ -220,8 +222,9 @@ public final class AntiModelScreen extends Screen {
                 return;
             }
 
-            boolean disabled = AntiModelClientState.get().isDisabled(keyForStack(player));
-            ItemStack toRender = disabled ? AntiModelItemUtil.withoutCustomModelData(stack) : stack;
+            String key = keyForStack(player);
+            boolean overridden = AntiModelClientState.get().hasOverride(key);
+            ItemStack toRender = AntiModelClientState.get().apply(stack, key);
 
             int ix = x + 1;
             int iy = y + 1;
@@ -229,9 +232,9 @@ public final class AntiModelScreen extends Screen {
             context.drawItem(toRender, ix, iy);
             context.drawStackOverlay(MinecraftClient.getInstance().textRenderer, toRender, ix, iy);
 
-            if (disabled) {
-                // Red overlay to indicate suppressed model data
-                context.fill(ix, iy, ix + SLOT_INNER, iy + SLOT_INNER, 0x33FF0000);
+            if (overridden) {
+                // Blue overlay to indicate any active display override.
+                context.fill(ix, iy, ix + SLOT_INNER, iy + SLOT_INNER, 0x3344AAFF);
             }
         }
     }

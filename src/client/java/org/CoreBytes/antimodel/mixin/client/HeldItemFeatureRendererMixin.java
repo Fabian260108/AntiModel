@@ -11,7 +11,6 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Arm;
 import org.CoreBytes.antimodel.client.AntiModelClientState;
-import org.CoreBytes.antimodel.client.AntiModelItemUtil;
 import org.CoreBytes.antimodel.client.AntiModelKeyUtil;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -23,12 +22,13 @@ public abstract class HeldItemFeatureRendererMixin {
             method = "renderItem(Lnet/minecraft/client/render/entity/state/ArmedEntityRenderState;Lnet/minecraft/client/render/item/ItemRenderState;Lnet/minecraft/item/ItemStack;Lnet/minecraft/util/Arm;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/command/OrderedRenderCommandQueue;I)V",
             at = @At("HEAD"),
             argsOnly = true,
-            index = 2
+            ordinal = 0
     )
     private ItemStack antimodel$stripCustomModelDataThirdPersonHeld(
             ItemStack original,
             ArmedEntityRenderState state,
             ItemRenderState itemState,
+            ItemStack heldStack,
             Arm arm,
             MatrixStack matrices,
             OrderedRenderCommandQueue queue,
@@ -47,12 +47,7 @@ public abstract class HeldItemFeatureRendererMixin {
                 ? ("main:" + client.player.getInventory().getSelectedSlot())
                 : ("main:" + PlayerInventory.OFF_HAND_SLOT);
         String key = AntiModelKeyUtil.keyForStackOrFallback(original, fallbackKey);
-
-        if (AntiModelClientState.get().isDisabled(key)) {
-            return AntiModelItemUtil.withoutCustomModelData(original);
-        }
-
-        return original;
+        return AntiModelClientState.get().apply(original, key, fallbackKey);
     }
 }
 

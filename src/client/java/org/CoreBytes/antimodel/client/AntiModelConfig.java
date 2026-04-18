@@ -11,8 +11,9 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 
 public final class AntiModelConfig {
@@ -38,14 +39,26 @@ public final class AntiModelConfig {
         return FabricLoader.getInstance().getConfigDir().resolve(FILE_NAME);
     }
 
+    private Map<String, OverrideEntry> overrides = new LinkedHashMap<>();
+    // Legacy format compatibility for older config versions.
     private Set<String> disabledKeys = new LinkedHashSet<>();
 
-    public Set<String> disabledKeys() {
-        return disabledKeys;
+    public Map<String, OverrideEntry> overrides() {
+        if (overrides == null) {
+            overrides = new LinkedHashMap<>();
+        }
+        return overrides;
     }
 
-    public void setDisabledKeys(Collection<String> keys) {
-        disabledKeys = new LinkedHashSet<>(keys);
+    public void setOverrides(Map<String, OverrideEntry> values) {
+        overrides = new LinkedHashMap<>(values);
+    }
+
+    public Set<String> legacyDisabledKeys() {
+        if (disabledKeys == null) {
+            disabledKeys = new LinkedHashSet<>();
+        }
+        return disabledKeys;
     }
 
     public void save() {
@@ -56,6 +69,27 @@ public final class AntiModelConfig {
                 GSON.toJson(this, writer);
             }
         } catch (IOException ignored) {
+        }
+    }
+
+    public static final class OverrideEntry {
+        private String type = "NONE";
+        private int value = 0;
+
+        public OverrideEntry() {
+        }
+
+        public OverrideEntry(String type, int value) {
+            this.type = type;
+            this.value = value;
+        }
+
+        public String type() {
+            return type;
+        }
+
+        public int value() {
+            return value;
         }
     }
 }
