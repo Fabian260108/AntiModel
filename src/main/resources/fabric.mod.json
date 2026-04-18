@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "antimodel",
+  "version": "${version}",
+  "name": "AntiModel",
+  "description": "",
+  "authors": [],
+  "contact": {},
+  "license": "Apache-2.0",
+  "icon": "assets/antimodel/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-datagen": [
+      "org.CoreBytes.antimodel.client.AntimodelDataGenerator"
+    ],
+    "client": [
+      "org.CoreBytes.antimodel.client.AntimodelClient"
+    ],
+    "main": [
+      "org.CoreBytes.antimodel.Antimodel"
+    ]
+  },
+  "mixins": [
+    "antimodel.mixins.json",
+    {
+      "config": "antimodel.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
